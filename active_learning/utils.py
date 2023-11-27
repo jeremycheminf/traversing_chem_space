@@ -6,11 +6,12 @@ from sklearn.metrics import balanced_accuracy_score, roc_auc_score, precision_sc
 import numpy as np
 import pandas as pd
 import torch
-from rdkit.Chem import AllChem, DataStructs
+from rdkit.Chem import AllChem, DataStructs, MolFromSmiles, MolToSmiles
 from typing import Union, Optional
 from torch_geometric.loader import DataLoader as pyg_DataLoader
 from torch import Tensor
 from torch.utils.data import TensorDataset, DataLoader
+from chembl_structure_pipeline.standardizer import standardize_mol
 
 
 structural_smarts = {
@@ -549,3 +550,21 @@ def to_torch_dataloader(x: Union[list, np.ndarray], y: Optional[np.ndarray] = No
     else:
         return pyg_DataLoader(x, **kwargs)
 
+
+
+def standardize_smiles(smiles_list: list) -> list:
+    """
+    Standardizes a list of SMILES strings.
+
+    Parameters:
+        smiles_list (list): A list of SMILES strings to be standardized.
+
+    Returns:
+        list: A list of standardized SMILES strings.
+    """
+    standardized_list = []
+    for smiles in smiles_list:
+        mol = MolFromSmiles(smiles)
+        standardized_smiles = MolToSmiles(standardize_mol(mol))
+        standardized_list.append(standardized_smiles)
+    return standardized_list
