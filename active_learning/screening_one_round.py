@@ -51,7 +51,7 @@ def active_learning_one_round(acquisition_method: str = 'exploration', max_scree
     ds_select = MasterDatasetPath('select', representation=representation, path=path_file_select,select = True)
 
     # Initiate evaluation trackers
-    eval_screen, eval_train = Evaluate(), Evaluate()
+    eval_train = Evaluate()
     #handler = Handler(n_start=n_start, seed=seed, bias=bias, dataset=dataset)
 
     # Define some variables
@@ -104,7 +104,7 @@ def active_learning_one_round(acquisition_method: str = 'exploration', max_scree
     eval_train.eval(train_logits_N_K_C, y_train)
 
     screen_logits_N_K_C = model.predict(screen_loader)
-    eval_screen.eval(screen_logits_N_K_C, y_screen)
+    #eval_screen.eval(screen_logits_N_K_C, y_screen)
 
     # Select the molecules to add for the next cycle
     print("Sample acquisition")
@@ -113,7 +113,7 @@ def active_learning_one_round(acquisition_method: str = 'exploration', max_scree
 
     # Add all results to a dataframe
     train_results = eval_train.to_dataframe("train_")
-    screen_results = eval_screen.to_dataframe('screen_')
-    results = pd.concat([train_results, screen_results], axis=1)
+   # screen_results = eval_screen.to_dataframe('screen_')
+    results = train_results
 
     return results, picks

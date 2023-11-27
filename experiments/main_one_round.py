@@ -7,6 +7,8 @@ from active_learning.screening_one_round import active_learning_one_round
 import itertools
 import argparse
 from ast import literal_eval
+import pandas as pd
+import numpy as np
 
 
 
@@ -90,6 +92,8 @@ if __name__ == '__main__':
         results['batch_size'] = experiment['batch_size']
         results['seed'] = experiment['seed']
         results['bias'] = experiment['bias']
-        compounds.to_csv(output_file = args.out, mode='a', index=False, header=False if os.path.isfile(output_file) else True)
+        col_names = ['col' + str(i) for i in np.arange(compounds.shape[0]) + 1]
+        pick_df = pd.DataFrame(data=compounds.T, columns=col_names)
+        pick_df.to_csv(output_file = args.out, mode='a', index=False, header=False if os.path.isfile(output_file) else True)
 
         results.to_csv(LOG_FILE, mode='a', index=False, header=False if os.path.isfile(LOG_FILE) else True)
