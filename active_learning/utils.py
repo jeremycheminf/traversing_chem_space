@@ -6,12 +6,19 @@ from sklearn.metrics import balanced_accuracy_score, roc_auc_score, precision_sc
 import numpy as np
 import pandas as pd
 import torch
-from rdkit.Chem import AllChem, DataStructs, MolFromSmiles, MolToSmiles
+from rdkit.Chem import AllChem, DataStructs, MolFromSmiles, MolToSmiles, Descriptors, rdMolDescriptors
 from typing import Union, Optional
 from torch_geometric.loader import DataLoader as pyg_DataLoader
 from torch import Tensor
 from torch.utils.data import TensorDataset, DataLoader
 from chembl_structure_pipeline.standardizer import standardize_mol
+
+from sklearn.manifold import TSNE
+from rdkit.DataStructs import BulkTanimotoSimilarity, ConvertToNumpyArray
+from sklearn import preprocessing as pre
+from rdkit.Chem.AllChem import GetMorganFingerprintAsBitVect
+from rdkit.Chem.QED import qed
+
 
 
 structural_smarts = {
@@ -269,7 +276,16 @@ def molecular_graph_featurizer(smiles: str, y=None, structural_feats: bool = Tru
 
 
 def atom_props(atom):
+    """
+    Generate the atom properties for a given atom.
 
+    Args:
+        atom (Atom): The atom for which properties are to be generated.
+
+    Returns:
+        list: A list containing the atom properties.
+
+    """
     x = []
 
     atom_types = ['C', 'N', 'O', 'S', 'F', 'Cl', 'Br', 'I', 'P', 'Si', 'B', 'Se']
@@ -338,12 +354,11 @@ def match_patterns(mol, smarts: dict) -> Tensor:
 def smiles_to_ecfp(smiles: list[str], radius: int = 2, nbits: int = 1024, silent: bool = True, to_array: bool = True) \
         -> np.ndarray:
     """ Get a Numpy array of ECFPs from a list of SMILES strings """
-    from rdkit.Chem.AllChem import GetMorganFingerprintAsBitVect
-    from rdkit.Chem import MolFromSmiles
-    from rdkit.DataStructs import ConvertToNumpyArray
+
 
     if type(smiles) is str:
         smiles = [smiles]
+    smiles = standardize_smiles(smiles)
 
     fp = [GetMorganFingerprintAsBitVect(MolFromSmiles(s), radius, nBits=nbits) for s in tqdm(smiles, disable=silent)]
 
@@ -430,9 +445,18 @@ class Evaluate:
 
 
 def mol_descriptor(smiles: list, scale: bool = True):
-    from rdkit.Chem.QED import qed
-    from rdkit.Chem import Descriptors, rdMolDescriptors
-    from sklearn import preprocessing as pre
+    """
+    Generate molecular descriptors for a list of SMILES strings.
+    
+    Args:
+        smiles (list): A list of SMILES strings.
+        scale (bool, optional): A flag indicating whether to scale the descriptors. Defaults to True.
+    
+    Returns:
+        numpy.ndarray: An array of molecular descriptors.
+            - If scale is True, the descriptors are scaled using MinMaxScaler.
+            - If scale is False, the descriptors are not scaled.
+    """
     # smiles = smiles[0]
     X = []
     for smi in tqdm(smiles):
@@ -464,16 +488,15 @@ def mol_descriptor(smiles: list, scale: bool = True):
 
 
 def tsne():
+    """
+    Generate the t-SNE plot for a given dataset.
 
+    This function takes no parameters.
+
+    Returns:
+        None
+    """
     from active_learning.data_prep import MasterDataset
-    from sklearn.manifold import TSNE
-    import numpy as np
-    import pandas as pd
-    from rdkit import Chem
-    from rdkit.Chem import Descriptors
-    from rdkit.DataStructs import BulkTanimotoSimilarity
-    from sklearn import preprocessing as pre
-
     ds_test = MasterDataset('test', representation='ecfp')
     ds_screen = MasterDataset('screen', representation='ecfp')
 
@@ -513,6 +536,7 @@ def get_tanimoto_matrix(smiles: list[str], radius: int = 2, nBits: int = 1024, v
     """ Calculates a matrix of Tanimoto similarity scores for a list of SMILES string"""
     from active_learning.data_prep import smi_to_scaff
 
+
     # Make a fingerprint database
     db_fp = {}
     for smi in smiles:
@@ -541,15 +565,6 @@ def get_tanimoto_matrix(smiles: list[str], radius: int = 2, nBits: int = 1024, v
     return m
 
 
-def to_torch_dataloader(x: Union[list, np.ndarray], y: Optional[np.ndarray] = None, **kwargs) -> \
-        Union[DataLoader, pyg_DataLoader]:
-
-    if type(x) is np.ndarray:
-        assert y is not None, 'No y values provided'
-        return DataLoader(TensorDataset(Tensor(x), Tensor(y).unsqueeze(1).type(torch.LongTensor)), **kwargs)
-    else:
-        return pyg_DataLoader(x, **kwargs)
-
 
 
 def standardize_smiles(smiles_list: list) -> list:
@@ -568,3 +583,11 @@ def standardize_smiles(smiles_list: list) -> list:
         standardized_smiles = MolToSmiles(standardize_mol(mol))
         standardized_list.append(standardized_smiles)
     return standardized_list
+
+def to_torch_dataloader(x: Union[list, np.ndarray], y: Optional[np.ndarray] = None, **kwargs) -> Union[DataLoader, pyg_DataLoader]:
+
+    if isinstance(x, np.ndarray):
+        assert y is not None, 'No y values provided'
+        return DataLoader(TensorDataset(Tensor(x), Tensor(y).unsqueeze(1).type(torch.LongTensor)), **kwargs)
+    else:
+        return pyg_DataLoader(x, **kwargs)
