@@ -94,6 +94,11 @@ if __name__ == '__main__':
         results['bias'] = experiment['bias']
         #col_names = ['col' + str(i) for i in np.arange(compounds.shape[0]) + 1]
         pick_df = pd.DataFrame(data=compounds)
-        pick_df.to_csv(output_file = args.out, mode='a', index=False, header=False if os.path.isfile(output_file) else True)
+        pick_df['acquisition_method'] = experiment['acquisition']
+        pick_df['architecture'] = experiment['architecture']
+        pick_df['batch_size'] = experiment['batch_size']
+        pick_df['seed'] = experiment['seed']
+        pick_df['bias'] = experiment['bias']
+        pick_df.to_csv(args.out, mode='a', index=False, header=False if os.path.isfile(output_file) else True)
 
         results.to_csv(LOG_FILE, mode='a', index=False, header=False if os.path.isfile(LOG_FILE) else True)
