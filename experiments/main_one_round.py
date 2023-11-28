@@ -79,18 +79,16 @@ if __name__ == "__main__":
 
     PARAMETERS = {
         "max_screen_size": [100000],
-        "batch_size": [64, 32, 16],
-        "architecture": ["gcn", "mlp"],
+        "batch_size": [20],
+        "architecture": ["mlp"],
         "path_prior": ["/home/jeremy/traversing_chem_space/data/Generic/screen.csv"],
         "path_select": ["/home/jeremy/traversing_chem_space/data/Generic/select.csv"],
-        "seed": list(range(10)),
-        "bias": ["random", "small", "large"],
+        "seed": [1],
+        "bias": ["small"],
         "acquisition": [
             "random",
             "exploration",
             "exploitation",
-            "dynamic",
-            "dynamicbald",
             "batch_bald",
             "similarity",
             "bald",
@@ -103,7 +101,6 @@ if __name__ == "__main__":
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
     # PARAMETERS['acquisition'] = ['random']
-    # PARAMETERS['bias'] = ['random']
     # PARAMETERS['architecture'] = ['gcn']
     # LOG_FILE = f"results/{PARAMETERS['architecture'][0]}_{PARAMETERS['acquisition'][0]}_{PARAMETERS['bias'][0]}_simulation_results.csv"
 
@@ -115,7 +112,6 @@ if __name__ == "__main__":
         # print("it is" + str(experiments))
 
         results, compounds = active_learning_one_round(
-            bias=experiment["bias"],
             acquisition_method=experiment["acquisition"],
             max_screen_size=experiment["max_screen_size"],
             batch_size=experiment["batch_size"],
@@ -133,14 +129,12 @@ if __name__ == "__main__":
         results["architecture"] = experiment["architecture"]
         results["batch_size"] = experiment["batch_size"]
         results["seed"] = experiment["seed"]
-        results["bias"] = experiment["bias"]
         # col_names = ['col' + str(i) for i in np.arange(compounds.shape[0]) + 1]
         pick_df = pd.DataFrame(data=compounds)
         pick_df["acquisition_method"] = experiment["acquisition"]
         pick_df["architecture"] = experiment["architecture"]
         pick_df["batch_size"] = experiment["batch_size"]
         pick_df["seed"] = experiment["seed"]
-        pick_df["bias"] = experiment["bias"]
         pick_df.to_csv(
             args.out,
             mode="a",
