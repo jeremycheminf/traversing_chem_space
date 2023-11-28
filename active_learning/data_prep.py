@@ -14,7 +14,6 @@ from rdkit.Chem.Scaffolds import MurckoScaffold
 from rdkit import Chem
 from tqdm import tqdm
 from typing import Any
-import h5py
 from config import ROOT_DIR
 
 
@@ -205,24 +204,25 @@ class MasterDatasetPath:
         representation: str = "ecfp",
         root: str = "data",
         overwrite: bool = False,
-        select: bool = False
+        select: bool = False,
     ) -> None:
         assert representation in [
             "ecfp",
             "graph",
         ], f"'representation' must be 'ecfp' or 'graph', not {representation}"
         self.representation = representation
-        self.pth = os.path.join(os.path.dirname(path),"processed_data")
+        self.pth = os.path.join(os.path.dirname(path), "processed_data")
+        self.name = name
         df = pd.read_csv(path)
         if select:
-            df['y'] = 1 # create fake y column for select
+            df["y"] = 1  # create fake y column for select
 
         # If not done already, process all data. Else just load it
         if not os.path.exists(os.path.join(self.pth, "one_round", name)) or overwrite:
             assert (
                 df is not None
             ), "You need to supply a dataframe with 'smiles' and 'y' values"
-            os.makedirs(os.path.join(self.pth, "one_round", name), exist_ok=True)
+            os.makedirs(os.path.join(self.pth, "one_round", self.name), exist_ok=True)
             self.process(df)
             (
                 self.smiles_index,
@@ -255,22 +255,30 @@ class MasterDatasetPath:
             for smi, y in tqdm(zip(smiles, y))
         ]
 
-        torch.save(index_smiles, os.path.join(self.pth, "index_smiles"))
-        torch.save(smiles_index, os.path.join(self.pth, "smiles_index"))
-        torch.save(smiles, os.path.join(self.pth, "smiles"))
-        torch.save(x, os.path.join(self.pth, "x"))
-        torch.save(y, os.path.join(self.pth, "y"))
-        torch.save(graphs, os.path.join(self.pth, "graphs"))
+        torch.save(
+            index_smiles, os.path.join(self.pth, "one_round", self.name, "index_smiles")
+        )
+        torch.save(
+            smiles_index, os.path.join(self.pth, "one_round", self.name, "smiles_index")
+        )
+        torch.save(smiles, os.path.join(self.pth, "one_round", self.name, "smiles"))
+        torch.save(x, os.path.join(self.pth, "one_round", self.name, "x"))
+        torch.save(y, os.path.join(self.pth, "one_round", self.name, "y"))
+        torch.save(graphs, os.path.join(self.pth, "one_round", self.name, "graphs"))
 
     def load(self) -> (dict, dict, np.ndarray, np.ndarray, np.ndarray, list):
         print("Loading data ... ", flush=True, file=sys.stderr)
 
-        index_smiles = torch.load(os.path.join(self.pth, "index_smiles"))
-        smiles_index = torch.load(os.path.join(self.pth, "smiles_index"))
-        smiles = torch.load(os.path.join(self.pth, "smiles"))
-        x = torch.load(os.path.join(self.pth, "x"))
-        y = torch.load(os.path.join(self.pth, "y"))
-        graphs = torch.load(os.path.join(self.pth, "graphs"))
+        index_smiles = torch.load(
+            os.path.join(self.pth, "one_round", self.name, "index_smiles")
+        )
+        smiles_index = torch.load(
+            os.path.join(self.pth, "one_round", self.name, "smiles_index")
+        )
+        smiles = torch.load(os.path.join(self.pth, "one_round", self.name, "smiles"))
+        x = torch.load(os.path.join(self.pth, "one_round", self.name, "x"))
+        y = torch.load(os.path.join(self.pth, "one_round", self.name, "y"))
+        graphs = torch.load(os.path.join(self.pth, "one_round", self.name, "graphs"))
 
         return smiles_index, index_smiles, smiles, x, y, graphs
 
