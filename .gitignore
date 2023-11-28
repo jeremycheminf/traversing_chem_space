@@ -9,3 +9,4 @@
 
 *.pyc
 .vscode/settings.json
+picks.csv
