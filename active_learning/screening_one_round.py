@@ -116,14 +116,23 @@ def active_learning_one_round(
     # Initiate and train the model (optimize if specified)
     print("Training model")
 
-    model = Ensemble(
-        seed=seed,
-        ensemble_size=ensemble_size,
-        architecture=architecture,
-        anchored=anchored,
-        in_feats=4096,
-        #  n_hidden=4096,
-    )
+    if architecture == "mlp":
+        model = Ensemble(
+            seed=seed,
+            ensemble_size=ensemble_size,
+            architecture=architecture,
+            anchored=anchored,
+            in_feats=4096,
+            #  n_hidden=4096,
+        )
+    else:
+        model = Ensemble(
+            seed=seed,
+            ensemble_size=ensemble_size,
+            architecture=architecture,
+            anchored=anchored,
+        )
+
     if optimize_hyperparameters:
         model.optimize_hyperparameters(x_train, y_train)
     model.train(train_loader_balanced, verbose=False)
