@@ -80,7 +80,7 @@ if __name__ == "__main__":
     PARAMETERS = {
         "max_screen_size": [100000],
         "batch_size": [20],
-        "architecture": ["mlp"],
+        "architecture": ["gcn"],
         "path_prior": ["/home/jeremy/traversing_chem_space/data/Generic/screen.csv"],
         "path_select": ["/home/jeremy/traversing_chem_space/data/Generic/select.csv"],
         "seed": [1],
